@@ -25,6 +25,8 @@ long maskMaker(int size);
 int32_t changeEndianness32(int32_t val);
 vector<long> changeEndiannessVector(vector<long> vec);
 vector<long> keySchedule(string key);
+vector<long> encrypt(vector<long> input, vector<long> keys);
+vector<long> decrypt(vector<long> input, vector<long> keys);
 
 int main(int argc, char* argv[]){
 	if(argc != 6){
@@ -73,23 +75,121 @@ int main(int argc, char* argv[]){
 	b_hex = stringToHex(bString);
 	a_hex = stringToHex(aString);
 	
+	vector<long> inputText;
+	inputText.push_back(a_hex);
+	inputText.push_back(b_hex);
+	inputText.push_back(c_hex);
+	inputText.push_back(d_hex);
+
 	inFile.close();
 
 	vector<long> keys = keySchedule(key);
 	
+	/*for(int i = 0; i < keys.size(); i++){
+		cout << hex << keys[i] << endl;
+	}
+	cout << int << keys.size() << endl;*/
+
+	cout << "Original" << endl;
+	for(int i = 0; i < inputText.size(); i++){
+		cout << hex << inputText[i] << endl;
+	}
+	cout << "Encrypted" << endl;
+	vector<long> ciphertext = encrypt(inputText, keys);
+	for(int i = 0; i < ciphertext.size(); i++){
+		cout << hex << ciphertext[i] << endl;
+	}
+	cout << "Decrypted" << endl;
+	vector<long> decrypttext = decrypt(ciphertext, keys);
+	for(int i = 0; i < decrypttext.size(); i++){
+		cout << hex << decrypttext[i] << endl;
+	}
 }
+
 
 vector<long> keySchedule(string key){
 	//KEY_BYTES number of bytes in the key == KEY_BYTES * 8 number of bits
 	int words = (KEY_BYTES*8)/32;//c
 	vector<long> keyVector;
+	int index = 0;
 	for(int i = 0; i < words; i++){
 		//Break the key into "words" number of words
-		string tmp = key.substr(i,8);//TODO SUBSTR NOT BEING CREATED RIGHT
+		string tmp = key.substr(index,8);
 		keyVector.push_back(stringToHex(tmp));
-		cout << hex << stringToHex(tmp) << endl;
+		index+=8;
+	//	cout << hex << stringToHex(tmp) << endl;
 	}
+	vector<long> roundKeys;
+	roundKeys.push_back(P32);
+	for(int i = 1; i < (2*ROUNDS + 3); i++){
+		roundKeys.push_back((long)roundKeys[i-1] + Q32);
+	}
+
+	long A, B, i, j;
+	A = B = i = j = 0;
+	
+	long v = times(3, max(words ,(2*ROUNDS + 3)));
+	for(int s = 0; s < v; s++){
+		A = roundKeys[i] = leftRotate(roundKeys[i] + A + B, 3);
+		B = keyVector[j] = leftRotate(keyVector[j] + A + B, (A+B));
+		i = (i+1)%(2*ROUNDS+4);
+		j = (j+1)%words;
+	}
+	return roundKeys;
 	 
+}
+
+vector<long> encrypt(vector<long> input, vector<long> keys){
+	//long A = input[0];
+	//long B = input[1];
+	//long C = input[2];
+	//long D = input[3];
+
+	input[1] = input[1] + keys[0];
+	input[3] = input[3] + keys[1];
+	long t, u;
+	for(int i = 1; i < ROUNDS; i++){
+		t = leftRotate((input[1] * (2*input[1] + 1)), log2(WORD_SIZE));
+		u = leftRotate((input[3] * (2*input[3] + 1)), log2(WORD_SIZE));
+		input[0] = leftRotate((input[0] ^ t), u) + keys[2*i];
+		input[2] = leftRotate((input[2] ^ u), t) + keys[(2*i)+1];
+		long tmpA, tmpB, tmpC, tmpD;
+		tmpA = input[0];
+		tmpB = input[1];
+		tmpC = input[2];
+		tmpD = input[3];
+		input[0] = tmpB;
+		input[1] = tmpC;
+		input[2] = tmpD;
+		input[3] = tmpA;
+	}
+	input[0] = input[0] + keys[2*ROUNDS + 3];
+	input[2] = input[2] + keys[2*ROUNDS + 3];
+	return input;
+}
+
+vector<long> decrypt(vector<long> input, vector<long> keys){
+	input[2] = input[2] - keys[2*ROUNDS + 3];
+	input[0] = input[0] - keys[2*ROUNDS + 3];
+	long t, u;
+	for(int i = ROUNDS; i > 1; i--){
+		long tmpA, tmpB, tmpC, tmpD;
+		tmpA = input[0];
+		tmpB = input[1];
+		tmpC = input[2];
+		tmpD = input[3];
+		input[0] = tmpD;
+		input[1] = tmpA;
+		input[2] = tmpB;
+		input[3] = tmpC;
+		u = leftRotate(input[3] * (2 * input[3] + 1), log2(WORD_SIZE));
+		t = leftRotate(input[1] * (2 * input[1] + 1), log2(WORD_SIZE));
+		input[2] = rightRotate(input[2] - keys[2*i + 1], t) ^ u;
+		input[0] = rightRotate(input[0] - keys[2*i], u) ^ t;		
+	}
+	input[3] = input[3] - keys[1];
+	input[0] = input[0] - keys[0];
+	return input;
 }
 
 vector<long> changeEndiannessVector(vector<long> vec){
@@ -129,7 +229,7 @@ int minus(int a, int b){
 
 int times(int a, int b){
 	return (a*b)%(int)(pow(2,WORD_SIZE));
-}
+} 
 
 long leftRotate(long num, long amount){
 	long numBits = log2(WORD_SIZE);
