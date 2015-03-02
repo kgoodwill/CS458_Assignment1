@@ -5,6 +5,7 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+#include <vector>
 
 #define P32 0xB7E15163
 #define Q32 0x9E3779B9
@@ -22,7 +23,8 @@ long leftRotate(long num, long amount);
 long rightRotate(long num, long amount);
 long maskMaker(int size);
 int32_t changeEndianness32(int32_t val);
-long* changeEndianness(long arr[]);
+vector<long> changeEndiannessVector(vector<long> vec);
+vector<long> keySchedule(string key);
 
 int main(int argc, char* argv[]){
 	if(argc != 6){
@@ -73,24 +75,36 @@ int main(int argc, char* argv[]){
 	
 	inFile.close();
 
-	
+	vector<long> keys = keySchedule(key);
 	
 }
 
-long* keySchedule(string key){
+vector<long> keySchedule(string key){
 	//KEY_BYTES number of bytes in the key == KEY_BYTES * 8 number of bits
 	int words = (KEY_BYTES*8)/32;//c
-	long* keyArray = new long[words];
+	vector<long> keyVector;
+	for(int i = 0; i < words; i++){
+		//Break the key into "words" number of words
+		string tmp = key.substr(i,8);//TODO SUBSTR NOT BEING CREATED RIGHT
+		keyVector.push_back(stringToHex(tmp));
+		cout << hex << stringToHex(tmp) << endl;
+	}
 	 
 }
 
-long* changeEndiannessArray(long* arr){
+vector<long> changeEndiannessVector(vector<long> vec){
 	//Swap the endianness of each 32 bit number
-	for(int i = 0; i < sizeof(arr)/sizeof(*arr); i++){
-		long tmp = changeEndianness32(arr[i]);
-		arr[i] = tmp;
+	for(int i = 0; i < vec.size(); i++){
+		long tmp = changeEndianness32(vec[i]);
+		vec[i] = tmp;
 	}
 	//Swap the endianness of the array itself
+	for(int i = 0; i < (vec.size())/2; i++){
+		long tmp = vec[i];
+		vec[i] = vec[(vec.size()-1)-i];
+		vec[(vec.size()-1)-i] = tmp;
+	}
+	return vec;
 }
 
 int32_t changeEndianness32(int32_t val){
