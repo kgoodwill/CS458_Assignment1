@@ -83,6 +83,7 @@ int main(int argc, char* argv[]){
 
 	inFile.close();
 
+	inputText = changeEndiannessVector(inputText);
 	vector<long> keys = keySchedule(key);
 	
 	/*for(int i = 0; i < keys.size(); i++){
@@ -90,20 +91,23 @@ int main(int argc, char* argv[]){
 	}
 	cout << int << keys.size() << endl;*/
 
-	cout << "Original" << endl;
+	cout << "plaintext" << " ";
 	for(int i = 0; i < inputText.size(); i++){
-		cout << hex << inputText[i] << endl;
+		cout << hex << inputText[i] << " ";
 	}
-	cout << "Encrypted" << endl;
+	cout << endl;
+	cout << "ciphertext" << " ";
 	vector<long> ciphertext = encrypt(inputText, keys);
 	for(int i = 0; i < ciphertext.size(); i++){
-		cout << hex << ciphertext[i] << endl;
+		cout << hex << ciphertext[i] << " ";
 	}
-	cout << "Decrypted" << endl;
+	cout << endl;
+	cout << "plaintext" << " ";
 	vector<long> decrypttext = decrypt(ciphertext, keys);
 	for(int i = 0; i < decrypttext.size(); i++){
-		cout << hex << decrypttext[i] << endl;
+		cout << hex << decrypttext[i] << " ";
 	}
+	cout << endl;
 }
 
 
@@ -119,9 +123,10 @@ vector<long> keySchedule(string key){
 		index+=8;
 	//	cout << hex << stringToHex(tmp) << endl;
 	}
+	keyVector = changeEndiannessVector(keyVector);
 	vector<long> roundKeys;
 	roundKeys.push_back(P32);
-	for(int i = 1; i < (2*ROUNDS + 3); i++){
+	for(int i = 1; i <= (2*ROUNDS + 3); i++){
 		roundKeys.push_back((long)roundKeys[i-1] + Q32);
 	}
 
@@ -129,7 +134,7 @@ vector<long> keySchedule(string key){
 	A = B = i = j = 0;
 	
 	long v = times(3, max(words ,(2*ROUNDS + 3)));
-	for(int s = 0; s < v; s++){
+	for(int s = 0; s <= v; s++){
 		A = roundKeys[i] = leftRotate(roundKeys[i] + A + B, 3);
 		B = keyVector[j] = leftRotate(keyVector[j] + A + B, (A+B));
 		i = (i+1)%(2*ROUNDS+4);
@@ -148,7 +153,7 @@ vector<long> encrypt(vector<long> input, vector<long> keys){
 	input[1] = input[1] + keys[0];
 	input[3] = input[3] + keys[1];
 	long t, u;
-	for(int i = 1; i < ROUNDS; i++){
+	for(int i = 1; i <= ROUNDS; i++){
 		t = leftRotate((input[1] * (2*input[1] + 1)), log2(WORD_SIZE));
 		u = leftRotate((input[3] * (2*input[3] + 1)), log2(WORD_SIZE));
 		input[0] = leftRotate((input[0] ^ t), u) + keys[2*i];
@@ -172,7 +177,7 @@ vector<long> decrypt(vector<long> input, vector<long> keys){
 	input[2] = input[2] - keys[2*ROUNDS + 3];
 	input[0] = input[0] - keys[2*ROUNDS + 3];
 	long t, u;
-	for(int i = ROUNDS; i > 1; i--){
+	for(int i = ROUNDS; i >= 1; i--){
 		long tmpA, tmpB, tmpC, tmpD;
 		tmpA = input[0];
 		tmpB = input[1];
