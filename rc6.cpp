@@ -19,8 +19,8 @@ unsigned long stringToHex(string s);
 int plus(int a, int b);
 int minus(int a, int b);
 int times(int a, int b);
-long leftRotate(long num, long amount);
-long rightRotate(long num, long amount);
+unsigned long leftRotate(unsigned long num, unsigned long amount);
+unsigned long rightRotate(unsigned long num, unsigned long amount);
 long maskMaker(int size);
 int32_t changeEndianness32(int32_t val);
 vector<long> changeEndiannessVector(vector<long> vec);
@@ -231,29 +231,29 @@ int times(int a, int b){
 	return (a*b)%(int)(pow(2,WORD_SIZE));
 } 
 
-long leftRotate(long num, long amount){
-	long numBits = log2(WORD_SIZE);
-	long mask1, shiftCountMask, mask3;
+unsigned long leftRotate(unsigned long num, unsigned long amount){
+	unsigned long numBits = log2(WORD_SIZE);
+	unsigned long mask1, shiftCountMask, mask3;
 	mask1 = maskMaker(WORD_SIZE);
 	shiftCountMask = maskMaker(numBits);
-	long shiftBits = shiftCountMask & amount;
+	unsigned long shiftBits = shiftCountMask & amount;
 	mask3 = maskMaker(shiftBits);
-	long long x = mask3 << WORD_SIZE;
-	long long A = (num << shiftBits) & x;
-	long long B = (num << shiftBits) & mask1;
-	long long C = A >> WORD_SIZE;
+	unsigned long long x = mask3 << WORD_SIZE;
+	unsigned long long A = (num << shiftBits) & x;
+	unsigned long long B = (num << shiftBits) & mask1;
+	unsigned long long C = A >> WORD_SIZE;
 	return B|C;
 }
 
-long rightRotate(long num, long amount){
-	long shiftCountMask, rightMask;
-	long numBits = log2(WORD_SIZE);
+unsigned long rightRotate(unsigned long num, unsigned long amount){
+	unsigned long shiftCountMask, rightMask;
+	unsigned long numBits = log2(WORD_SIZE);
 	shiftCountMask = maskMaker(numBits);
-	long shiftBits = shiftCountMask & amount;
+	unsigned long shiftBits = shiftCountMask & amount;
 	rightMask = maskMaker(shiftBits);
 	rightMask = rightMask & num;//Now contains the right portion of the number
-	long shiftedNum = num >> shiftBits;
-	long leftPortion = rightMask << (WORD_SIZE - shiftBits);
+	unsigned long shiftedNum = num >> shiftBits;
+	unsigned long leftPortion = rightMask << (WORD_SIZE - shiftBits);
 	return shiftedNum | leftPortion;
 }
 
