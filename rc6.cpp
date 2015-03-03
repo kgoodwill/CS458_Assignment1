@@ -23,10 +23,10 @@ unsigned long leftRotate(unsigned long num, unsigned long amount);
 unsigned long rightRotate(unsigned long num, unsigned long amount);
 long maskMaker(int size);
 int32_t changeEndianness32(int32_t val);
-vector<long> changeEndiannessVector(vector<long> vec);
-vector<long> keySchedule(string key);
-vector<long> encrypt(vector<long> input, vector<long> keys);
-vector<long> decrypt(vector<long> input, vector<long> keys);
+vector<unsigned long> changeEndiannessVector(vector<unsigned long> vec);
+vector<unsigned long> keySchedule(string key);
+vector<unsigned long> encrypt(vector<unsigned long> input, vector<unsigned long> keys);
+vector<unsigned long> decrypt(vector<unsigned long> input, vector<unsigned long> keys);
 
 int main(int argc, char* argv[]){
 	if(argc != 6){
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
 	b_hex = stringToHex(bString);
 	a_hex = stringToHex(aString);
 	
-	vector<long> inputText;
+	vector<unsigned long> inputText;
 	inputText.push_back(a_hex);
 	inputText.push_back(b_hex);
 	inputText.push_back(c_hex);
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]){
 	inFile.close();
 
 	inputText = changeEndiannessVector(inputText);
-	vector<long> keys = keySchedule(key);
+	vector<unsigned long> keys = keySchedule(key);
 	
 	/*for(int i = 0; i < keys.size(); i++){
 		cout << hex << keys[i] << endl;
@@ -97,13 +97,13 @@ int main(int argc, char* argv[]){
 	}
 	cout << endl;
 	cout << "ciphertext" << " ";
-	vector<long> ciphertext = encrypt(inputText, keys);
+	vector<unsigned long> ciphertext = encrypt(inputText, keys);
 	for(int i = 0; i < ciphertext.size(); i++){
 		cout << hex << ciphertext[i] << " ";
 	}
 	cout << endl;
 	cout << "plaintext" << " ";
-	vector<long> decrypttext = decrypt(ciphertext, keys);
+	vector<unsigned long> decrypttext = decrypt(ciphertext, keys);
 	for(int i = 0; i < decrypttext.size(); i++){
 		cout << hex << decrypttext[i] << " ";
 	}
@@ -111,10 +111,10 @@ int main(int argc, char* argv[]){
 }
 
 
-vector<long> keySchedule(string key){
+vector<unsigned long> keySchedule(string key){
 	//KEY_BYTES number of bytes in the key == KEY_BYTES * 8 number of bits
 	int words = (KEY_BYTES*8)/32;//c
-	vector<long> keyVector;
+	vector<unsigned long> keyVector;
 	int index = 0;
 	for(int i = 0; i < words; i++){
 		//Break the key into "words" number of words
@@ -124,16 +124,16 @@ vector<long> keySchedule(string key){
 	//	cout << hex << stringToHex(tmp) << endl;
 	}
 	keyVector = changeEndiannessVector(keyVector);
-	vector<long> roundKeys;
+	vector<unsigned long> roundKeys;
 	roundKeys.push_back(P32);
 	for(int i = 1; i <= (2*ROUNDS + 3); i++){
 		roundKeys.push_back((long)roundKeys[i-1] + Q32);
 	}
 
-	long A, B, i, j;
+	unsigned long A, B, i, j;
 	A = B = i = j = 0;
 	
-	long v = times(3, max(words ,(2*ROUNDS + 3)));
+	unsigned long v = times(3, max(words ,(2*ROUNDS + 3)));
 	for(int s = 0; s <= v; s++){
 		A = roundKeys[i] = leftRotate(roundKeys[i] + A + B, 3);
 		B = keyVector[j] = leftRotate(keyVector[j] + A + B, (A+B));
@@ -144,7 +144,7 @@ vector<long> keySchedule(string key){
 	 
 }
 
-vector<long> encrypt(vector<long> input, vector<long> keys){
+vector<unsigned long> encrypt(vector<unsigned long> input, vector<unsigned long> keys){
 	//long A = input[0];
 	//long B = input[1];
 	//long C = input[2];
@@ -152,13 +152,13 @@ vector<long> encrypt(vector<long> input, vector<long> keys){
 
 	input[1] = input[1] + keys[0];
 	input[3] = input[3] + keys[1];
-	long t, u;
+	unsigned long t, u;
 	for(int i = 1; i <= ROUNDS; i++){
 		t = leftRotate((input[1] * (2*input[1] + 1)), log2(WORD_SIZE));
 		u = leftRotate((input[3] * (2*input[3] + 1)), log2(WORD_SIZE));
 		input[0] = leftRotate((input[0] ^ t), u) + keys[2*i];
 		input[2] = leftRotate((input[2] ^ u), t) + keys[(2*i)+1];
-		long tmpA, tmpB, tmpC, tmpD;
+		unsigned long tmpA, tmpB, tmpC, tmpD;
 		tmpA = input[0];
 		tmpB = input[1];
 		tmpC = input[2];
@@ -173,12 +173,12 @@ vector<long> encrypt(vector<long> input, vector<long> keys){
 	return input;
 }
 
-vector<long> decrypt(vector<long> input, vector<long> keys){
+vector<unsigned long> decrypt(vector<unsigned long> input, vector<unsigned long> keys){
 	input[2] = input[2] - keys[2*ROUNDS + 3];
 	input[0] = input[0] - keys[2*ROUNDS + 3];
-	long t, u;
+	unsigned long t, u;
 	for(int i = ROUNDS; i >= 1; i--){
-		long tmpA, tmpB, tmpC, tmpD;
+		unsigned long tmpA, tmpB, tmpC, tmpD;
 		tmpA = input[0];
 		tmpB = input[1];
 		tmpC = input[2];
@@ -197,15 +197,15 @@ vector<long> decrypt(vector<long> input, vector<long> keys){
 	return input;
 }
 
-vector<long> changeEndiannessVector(vector<long> vec){
+vector<unsigned long> changeEndiannessVector(vector<unsigned long> vec){
 	//Swap the endianness of each 32 bit number
 	for(int i = 0; i < vec.size(); i++){
-		long tmp = changeEndianness32(vec[i]);
+		unsigned long tmp = changeEndianness32(vec[i]);
 		vec[i] = tmp;
 	}
 	//Swap the endianness of the array itself
 	for(int i = 0; i < (vec.size())/2; i++){
-		long tmp = vec[i];
+		unsigned long tmp = vec[i];
 		vec[i] = vec[(vec.size()-1)-i];
 		vec[(vec.size()-1)-i] = tmp;
 	}
@@ -263,7 +263,7 @@ unsigned long rightRotate(unsigned long num, unsigned long amount){
 }
 
 long maskMaker(int size){
-	long mask = 0b0;
+	unsigned long mask = 0b0;
 	for(int i = 0; i < size; i++){
 		mask <<= 1;
 		mask++;
